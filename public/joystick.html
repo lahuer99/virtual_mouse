@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Joystick</title>
+    <style>
+        html, body {
+            height: 100%;
+        }
+        body {
+            margin: 0;
+        }
+        .zone.dynamic {
+            width: 300px;
+            height: 300px;
+            position: relative;
+        }
+        .full {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+        section.buttons {
+            width: 300px;
+            flex-direction: row;
+            justify-content: space-between;
+            position: relative;
+            display: flex;
+        }
+        section.buttons button {
+            box-sizing: border-box;
+            border: 1px solid blue;
+            width: 45%;
+            margin-top: 40px;
+            height: 60px;
+            color: skyblue;
+        }
+    </style>
+</head>
+<body>
+    <div class="full">
+        <div>
+            <section class="zone dynamic">
+
+            </section>
+            <section class="buttons">
+                <button id="left-button">
+                    Left
+                </button>
+                <button id="mid-button">
+                    Middle
+                </button>
+                <button id="right-button">
+                    Right
+                </button>
+            </section>
+            <br>
+            <input type="checkbox" id="hold-check" onchange="handleHoldCheck(this)" /><span id="hold-check-label"> Turn on click hold</span>
+        </div>
+    </div>
+
+    <script src="nipplejs.js"></script>
+    <script>
+        let holdMode = false;
+        let btn_l = false;
+        let btn_m = false;
+        let btn_r = false;
+        const API_ROOT = "";
+        var joystick_options = {
+            zone: document.querySelector(".zone.dynamic"),
+            color: 'blue',
+            multitouch: true,
+	    size: 300,
+	    mode: 'static',
+	    position: {top: '150px', left: '150px'}
+        }
+        function handleHoldCheck(element){
+            holdMode = element.checked;
+        }
+        var joystick = nipplejs.create(joystick_options);
+        var nipple = joystick.get(0);
+        console.log(nipple);
+        joystick.on('start', function() {
+        
+            var polling = window.setInterval(async function() {
+                var rel_x = Math.round(nipple.frontPosition.x / 10);
+                var rel_y = Math.round(nipple.frontPosition.y / 10);
+                await fetch(API_ROOT + "/co-ordinates", {
+                        method: "post",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            rel_x,
+                            rel_y,
+                            btn: 0
+                        })
+                    }).then((res) => {
+                    }).catch((err) => {
+                        console.log(err);
+                    });
+            }, 25);
+            joystick.on('end', async function() {
+                window.clearInterval(polling);
+                await fetch(API_ROOT + "/co-ordinates", {
+                        method: "post",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            rel_x: 0,
+                            rel_y: 0,
+                            btn: 0
+                        })
+                    }).then((res) => {
+                    }).catch((err) => {
+                        console.log(err);
+                    });
+                console.log("Ended");
+            });
+        });
+    
+        var left_button = document.getElementById("left-button");
+        var mid_button = document.getElementById("mid-button");
+        var right_button = document.getElementById("right-button");
+        left_button.onclick = async function() {
+            btn_l = !btn_l;
+            await fetch(API_ROOT + "/co-ordinates", {
+                    method: "post",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        rel_x: 0,
+                        rel_y: 0,
+                        btn: btn_l ? 3 : -3 
+                    })
+                }).then((res) => {
+                }).catch((err) => {
+                    console.log(err);
+                });
+            if (!holdMode) {
+                console.log("release");
+                btn_l = !btn_l
+                await fetch(API_ROOT + "/co-ordinates", {
+                    method: "post",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        rel_x: 0,
+                        rel_y: 0,
+                        btn: btn_l ? 3 : -3
+                    })
+                }).then((res) => {
+                }).catch((err) => {
+                    console.log(err);
+                });
+            }
+        }
+        mid_button.onclick = async function() {
+            btn_m = !btn_m;
+            await fetch(API_ROOT + "/co-ordinates", {
+                    method: "post",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        rel_x: 0,
+                        rel_y: 0,
+                        btn: btn_m ? 2 : -2
+                    })
+                }).then((res) => {
+                }).catch((err) => {
+                    console.log(err);
+                });
+            if (!holdMode) {
+                btn_m = !btn_m;
+                await fetch(API_ROOT + "/co-ordinates", {
+                    method: "post",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        rel_x: 0,
+                        rel_y: 0,
+                        btn: btn_m ? 2 : -2
+                    })
+                }).then((res) => {
+                }).catch((err) => {
+                    console.log(err);
+                });
+            }
+        }
+        right_button.onclick = async function() {
+            console.log("right button");
+            btn_r = !btn_r;
+            await fetch(API_ROOT + "/co-ordinates", {
+                    method: "post",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        rel_x: 0,
+                        rel_y: 0,
+                        btn: btn_r ? 1 : -1
+                    })
+                }).then((res) => {
+                }).catch((err) => {
+                    console.log(err);
+                });
+            if (!holdMode) {
+                btn_r = !btn_r;
+                await fetch(API_ROOT + "/co-ordinates", {
+                    method: "post",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        rel_x: 0,
+                        rel_y: 0,
+                        btn: btn_r ? 1 : -1
+                    })
+                }).then((res) => {
+                }).catch((err) => {
+                    console.log(err);
+                });
+            }
+        }
+
+    </script>
+</body>
+</html>
